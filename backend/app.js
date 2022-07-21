@@ -10,6 +10,7 @@ const passport = require('passport');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const puzzlesRouter = require('./routes/puzzles');
 
 const app = express();
 
@@ -35,5 +36,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/puzzles', puzzlesRouter);
 
 module.exports = app;
