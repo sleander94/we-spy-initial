@@ -7,8 +7,8 @@ const PuzzleSchema = new Schema({
   authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   timestamp: { type: Date, default: Date.now },
   title: { type: String, required: true },
-  image: { type: String, data: Buffer, required: true },
-  findables: [
+  image: { type: String, required: true },
+  hiddenItems: [
     {
       description: String,
       minX: Number,
