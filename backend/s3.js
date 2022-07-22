@@ -24,12 +24,7 @@ const uploadFile = async (file) => {
     Body: fileStream,
   };
 
-  s3.upload(params, (err, data) => {
-    if (err) {
-      throw err;
-    }
-    console.log(data);
-  });
+  return s3.upload(params).promise();
 };
 
 exports.uploadFile = uploadFile;
