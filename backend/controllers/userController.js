@@ -82,22 +82,12 @@ exports.login_post = (req, res, next) => {
 };
 
 exports.logout_post = (req, res, next) => {
-  passport.authenticate('local', (err, user) => {
+  req.logout((err) => {
     if (err) {
       return next(err);
     }
-    if (!user) {
-      return res.status(401).json({
-        message: 'No user logged in.',
-      });
-    }
-    req.logout(function (err) {
-      if (err) {
-        return next(err);
-      }
-      return res.status(200).json({
-        message: 'Logged out successfully.',
-      });
+    res.status(200).json({
+      message: 'Logged out successfully.',
     });
-  })(req, res, next);
+  });
 };
