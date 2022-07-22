@@ -88,3 +88,34 @@ exports.puzzle_post = [
     }
   },
 ];
+
+exports.puzzle_delete = (req, res, next) => {
+  if (req.isAuthenticated() && req.user.puzzles.includes(req.params.id)) {
+    Puzzle.findByIdAndDelete(req.params.id, (err) => {
+      if (err) {
+        return next(err);
+      }
+      Leaderboard.findOneAndDelete({ puzzle: req.params.id }, (err) => {
+        if (err) {
+          return next(err);
+        }
+        User.findOneAndUpdate(
+          { _id: req.user._id },
+          {
+            $pull: {
+              puzzles: req.params.id,
+              likedPuzzles: req.params.id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
+      });
+    });
+    res.status(200).json({ message: 'Puzzles deleted successfully.' });
+  } else {
+    res.status(401).json({ message: 'You can only delete your own puzzles.' });
+  }
+};
