@@ -1,4 +1,6 @@
 const Puzzle = require('../models/puzzle');
+const Leaderboard = require('../models/leaderboard');
+const User = require('../models/user');
 const { body, validationResult } = require('express-validator');
 const { uploadFile } = require('../s3');
 
@@ -29,11 +31,13 @@ exports.puzzle_post = [
   async (req, res, next) => {
     if (req.isAuthenticated()) {
       const errors = validationResult(req);
+
+      // Upload image file to AWS and get link info in result
       const file = req.file;
       const result = await uploadFile(file);
 
       if (!errors.isEmpty()) {
-        return res.status(400).json({ message: 'Validation error.' });
+        return res.status(400).json({ errors: errors });
       }
 
       const puzzle = new Puzzle({
@@ -43,13 +47,36 @@ exports.puzzle_post = [
         title: req.body.title,
         image: `https://wespypuzzles.s3.us-west-1.amazonaws.com/${result.Key}`,
         hiddenItems: req.body.hiddenItems,
-        likes: 0,
+        likes: [req.user._id],
         comments: [],
       });
-      puzzle.save((err) => {
+      puzzle.save((err, results) => {
         if (err) {
           return next(err);
         }
+        // After puzzle is saved, update user's likes to include it & create a leaderboard for it
+        User.findOneAndUpdate(
+          { _id: req.user._id },
+          {
+            $push: {
+              puzzles: results._id,
+              likedPuzzles: results._id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
+        const leaderboard = new Leaderboard({
+          puzzle: results._id,
+          scores: [],
+        });
+        leaderboard.save((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
         return res
           .status(200)
           .json({ message: 'Puzzle created successfully.' });
