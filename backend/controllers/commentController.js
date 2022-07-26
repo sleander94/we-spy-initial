@@ -1,6 +1,6 @@
-const Puzzle = require('../models/puzzle');
-const Leaderboard = require('../models/leaderboard');
 const Comment = require('../models/comment');
+const Puzzle = require('../models/puzzle');
+const User = require('../models/user');
 const { body, validationResult } = require('express-validator');
 
 exports.comment_post = [
@@ -18,10 +18,35 @@ exports.comment_post = [
         text: req.body.text,
         puzzle: req.params.id,
       });
-      comment.save((err) => {
+      comment.save((err, results) => {
         if (err) {
           return next(err);
         }
+        // Add comment to puzzle & user comment arrays on save
+        Puzzle.findOneAndUpdate(
+          { _id: req.params.id },
+          {
+            $push: {
+              comments: results._id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
+        User.findOneAndUpdate(
+          { _id: req.user._id },
+          {
+            $push: {
+              comments: results._id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
         res.status(200).json({ message: 'Comment created successfully.' });
       });
     } else {
@@ -47,6 +72,31 @@ exports.comment_delete = (req, res, next) => {
         if (err) {
           return next(err);
         }
+        // Remove comment from puzzle & user comment arrays on delete
+        Puzzle.findOneAndUpdate(
+          { _id: req.params.id },
+          {
+            $pull: {
+              comments: results._id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
+        User.findOneAndUpdate(
+          { _id: req.user._id },
+          {
+            $pull: {
+              comments: results._id,
+            },
+          }
+        ).exec((err) => {
+          if (err) {
+            return next(err);
+          }
+        });
         return res
           .status(200)
           .json({ message: 'Comment deleted successfully.' });
